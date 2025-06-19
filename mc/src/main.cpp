@@ -24,16 +24,16 @@ enum HOST_CMD {
     pinModeOutput = 7,
 };
 
-enum CLIENT_RESULT {
+enum CLIENT_RESPONSE {
     digitalReadHigh = 1,
     digitalReadLow = 2
 };
 
 
-typedef struct host_cmd_t {
+typedef struct {
     uint8_t cmd;
     uint8_t pin;
-};
+} host_cmd_t;
 
 host_cmd_t decode_command(const uint8_t encoded_cmd) {
     return host_cmd_t {
@@ -49,10 +49,10 @@ uint8_t encode_result(const uint8_t cmd, const uint8_t pin) {
 uint8_t get_client_result(int value) {
     uint8_t result;
     if ( value == HIGH ) {
-        result = CLIENT_RESULT::digitalReadHigh;
+        result = CLIENT_RESPONSE::digitalReadHigh;
     }
     else if ( value == LOW ){
-        result = CLIENT_RESULT::digitalReadLow;
+        result = CLIENT_RESPONSE::digitalReadLow;
     }
     else {
         result = 0xFF;
@@ -63,6 +63,9 @@ uint8_t get_client_result(int value) {
 void handle_command(const host_cmd_t cmd) {
     switch (cmd.cmd)
     {
+    default:
+        // problem!
+    break;
     case HOST_CMD::digitalWriteHigh:       digitalWrite(cmd.pin, HIGH);             break;
     case HOST_CMD::digitalWriteLow:        digitalWrite(cmd.pin, LOW);              break;
     case HOST_CMD::pinModeInput:           pinMode     (cmd.pin, INPUT);            break;
@@ -75,9 +78,6 @@ void handle_command(const host_cmd_t cmd) {
             if ( Serial.write(reply) != 1 ) {
                 // problem!
             }
-        break;
-    default:
-        // problem!
         break;
     }
 }
