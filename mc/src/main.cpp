@@ -111,6 +111,7 @@ void onRxEvent(
                 // do not send an ACK
             }
             else {
+                // send back the received data as an ACK
                 Serial.write(data);      
             }
         }
