@@ -12,6 +12,7 @@
 #include <unistd.h> // write(), read(), close()
 
 #include <chrono>
+#include <thread>
 
 typedef struct {
     uint8_t cmd;
@@ -67,14 +68,46 @@ void msg_loop(int serial_port) {
                     auto roundtrip_ms = std::chrono::duration <double,std::milli> (end-start).count();
 
                     host_cmd_t resp = unpack(response);
-                    printf("I: response (roundtrip: %.3f ms): %02X => %d %d\n", roundtrip_ms, response, resp.cmd, resp.pin);
+                    printf("I: req: %02X -> response (roundtrip: %.3f ms): %02X => %d %d\n", payload, roundtrip_ms, response, resp.cmd, resp.pin);
                 }
             }
         }
     }
 }
 
-int main() {
+void autofire(int serial_port) {
+    const uint8_t payload = 0x60;
+    uint8_t response;
+    size_t read_err = 0;
+    size_t success = 0;
+    size_t write_err = 0;
+    int l=0;
+    for(;;l++) {
+
+        //std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        int num_bytes;
+        ssize_t written;
+        if ( (written=write(serial_port, &payload, 1)) != 1 ) {
+            perror("write");
+            printf("Error %i from write: %s\n", errno, strerror(errno));
+            write_err++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        }
+        else if ( (num_bytes = read(serial_port, &response, sizeof(response))) != 1 ) {
+            read_err++;
+        }
+        else {
+            success++;
+        }
+        if ( l > 10000) {
+            l=0;
+            printf("success: %lu, read_err: %lu, write_err: %lu\n", success, read_err, write_err);
+        }
+    }
+}
+
+int main(int argc, char* argv[]) {
   // Open the serial port. Change device path as needed (currently set to an standard FTDI USB-UART cable type device)
   int serial_port = open("/dev/esp32mini", O_RDWR);
 
@@ -119,7 +152,12 @@ int main() {
       return 1;
   }
 
-  msg_loop(serial_port);
+  if ( argc == 2 && strcmp("a", argv[1]) == 0 ) {
+    autofire(serial_port);
+  }
+  else {
+    msg_loop(serial_port);
+  }
 
   /*
 

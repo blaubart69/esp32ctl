@@ -36,8 +36,10 @@ typedef struct {
 void vTaskBlinker(void* pvParameters )
 //----------------------------------------------------------------------------
 {
-    #define STATUS_LED 8
-    pinMode(STATUS_LED, OUTPUT);     // ESP32 super mini buildin LED
+    #define ESP32_SUPER_MINI_BUILDIN_LED 8
+
+    pinMode(ESP32_SUPER_MINI_BUILDIN_LED, OUTPUT);      // ESP32 super mini buildin LED
+    digitalWrite(ESP32_SUPER_MINI_BUILDIN_LED, HIGH);   // turn off
 
     QueueHandle_t blink_queue = (QueueHandle_t)pvParameters;
     for( ;; )
@@ -45,7 +47,7 @@ void vTaskBlinker(void* pvParameters )
         char message;
         if( xQueueReceive( blink_queue, &( message ), ( TickType_t ) pdMS_TO_TICKS(10000)) )  
         {
-            digitalWrite(STATUS_LED, LOW);
+            digitalWrite(ESP32_SUPER_MINI_BUILDIN_LED, LOW);
 
             TickType_t delay;
             if ( message == 'e' ) {
@@ -56,7 +58,7 @@ void vTaskBlinker(void* pvParameters )
             }
             vTaskDelay(delay);
 
-            digitalWrite(STATUS_LED, HIGH);
+            digitalWrite(ESP32_SUPER_MINI_BUILDIN_LED, HIGH);
         }
     }
 }
@@ -130,6 +132,8 @@ void onRxEvent(
   ,int32_t            event_id
   ,void*              event_data) 
 {
+
+
     int available;
     while ( (available = Serial.available()) != 0 )
     {
@@ -167,7 +171,7 @@ void setup()
 
     blink_queue = xQueueCreate(3, sizeof(char));
     Serial.onEvent( ARDUINO_HW_CDC_RX_EVENT, onRxEvent );
-    
+
     TaskHandle_t task_handle;
     xTaskCreate(
         vTaskBlinker
@@ -180,5 +184,8 @@ void setup()
 
 // the loop function runs over and over again forever
 void loop() {
-    vTaskDelete(nullptr);
+    delay(3000);
+    if ( Serial.available() > 0 ) {
+        onRxEvent(NULL, 0,0, NULL);   
+    }
 }
