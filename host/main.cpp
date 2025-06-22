@@ -1,6 +1,9 @@
 // C library headers
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>  // strerror
+#include <cstdint>
+
+
 
 // Linux headers
 #include <fcntl.h> // Contains file controls like O_RDWR
@@ -8,7 +11,7 @@
 #include <termios.h> // Contains POSIX terminal control definitions
 #include <unistd.h> // write(), read(), close()
 
-#include <cstdint>
+#include <chrono>
 
 typedef struct {
     uint8_t cmd;
@@ -37,18 +40,26 @@ void msg_loop(int serial_port) {
         int cmd, pin;
         scanf("%d %d", &cmd,&pin);
         uint8_t payload = pack(cmd,pin);
+
+        auto start = std::chrono::steady_clock::now();
+
         if ( write(serial_port, &payload, sizeof(payload)) != 1 ) {
             printf("E: write != 1\n");
         }
         else {
             uint8_t response;
             int num_bytes = read(serial_port, &response, sizeof(response));
+
+            auto end = std::chrono::steady_clock::now();
+
             if (num_bytes != sizeof(response)) {
                 printf("W: read only %d bytes\n", num_bytes);
             }
             else {
+                auto roundtrip_ms = std::chrono::duration <double,std::milli> (end-start).count();
+
                 host_cmd_t resp = unpack(response);
-                printf("I: response: %02X => %d %d\n", response, resp.cmd, resp.pin);
+                printf("I: response (roundtrip: %.3f ms): %02X => %d %d\n", roundtrip_ms, response, resp.cmd, resp.pin);
             }
         }
     }
