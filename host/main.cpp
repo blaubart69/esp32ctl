@@ -38,28 +38,37 @@ void msg_loop(int serial_port) {
     for(;;) {
         printf("cmd pin? ");
         int cmd, pin;
-        scanf("%d %d", &cmd,&pin);
-        uint8_t payload = pack(cmd,pin);
-
-        auto start = std::chrono::steady_clock::now();
-
-        if ( write(serial_port, &payload, sizeof(payload)) != 1 ) {
-            printf("E: write != 1\n");
+        if ( scanf("%u %u", &cmd,&pin) != 2 ) {
+            printf("E: could not parse input\n");
+            {
+                // consume all garbage input
+                int c;
+                while ( (c = getchar()) != '\n' && c != EOF ) { }
+            }
         }
         else {
-            uint8_t response;
-            int num_bytes = read(serial_port, &response, sizeof(response));
+            uint8_t payload = pack(cmd,pin);
 
-            auto end = std::chrono::steady_clock::now();
+            auto start = std::chrono::steady_clock::now();
 
-            if (num_bytes != sizeof(response)) {
-                printf("W: read only %d bytes\n", num_bytes);
+            if ( write(serial_port, &payload, sizeof(payload)) != 1 ) {
+                printf("E: write != 1\n");
             }
             else {
-                auto roundtrip_ms = std::chrono::duration <double,std::milli> (end-start).count();
+                uint8_t response;
+                int num_bytes = read(serial_port, &response, sizeof(response));
 
-                host_cmd_t resp = unpack(response);
-                printf("I: response (roundtrip: %.3f ms): %02X => %d %d\n", roundtrip_ms, response, resp.cmd, resp.pin);
+                auto end = std::chrono::steady_clock::now();
+
+                if (num_bytes != sizeof(response)) {
+                    printf("W: read only %d bytes\n", num_bytes);
+                }
+                else {
+                    auto roundtrip_ms = std::chrono::duration <double,std::milli> (end-start).count();
+
+                    host_cmd_t resp = unpack(response);
+                    printf("I: response (roundtrip: %.3f ms): %02X => %d %d\n", roundtrip_ms, response, resp.cmd, resp.pin);
+                }
             }
         }
     }
