@@ -101,7 +101,6 @@ int main() {
   tty.c_cc[VTIME] = 10;    // Wait for up to 1s (10 deciseconds), returning as soon as any data is received.
   tty.c_cc[VMIN] = 0;
 
-  // Set in/out baud rate to be 9600
   cfsetispeed(&tty, B230400);
   cfsetospeed(&tty, B230400);
 
