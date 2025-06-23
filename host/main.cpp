@@ -66,9 +66,9 @@ void msg_loop(int serial_port) {
                 }
                 else {
                     auto roundtrip_ms = std::chrono::duration <double,std::milli> (end-start).count();
-
+                    host_cmd_t req = unpack(payload);
                     host_cmd_t resp = unpack(response);
-                    printf("I: req: %02X -> response (roundtrip: %.3f ms): %02X => %d %d\n", payload, roundtrip_ms, response, resp.cmd, resp.pin);
+                    printf("I: cmd: %u, pin: %u (%02X) -> response (roundtrip: %.3f ms): %02X => %d %d\n", req.cmd, req.pin, payload, roundtrip_ms, response, resp.cmd, resp.pin);
                 }
             }
         }
@@ -76,33 +76,40 @@ void msg_loop(int serial_port) {
 }
 
 void autofire(int serial_port) {
-    const uint8_t payload = 0x60;
+    //const uint8_t payload = 0x60;
+    uint8_t payload = 0xB0;
     uint8_t response;
     size_t read_err = 0;
     size_t success = 0;
     size_t write_err = 0;
-    int l=0;
-    for(;;l++) {
 
-        //std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    uint8_t pins[] = {0,1,2,3,4,5,6,7,9,10,20,21};
 
-        int num_bytes;
-        ssize_t written;
-        if ( (written=write(serial_port, &payload, 1)) != 1 ) {
-            perror("write");
-            printf("Error %i from write: %s\n", errno, strerror(errno));
-            write_err++;
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        }
-        else if ( (num_bytes = read(serial_port, &response, sizeof(response))) != 1 ) {
-            read_err++;
-        }
-        else {
-            success++;
-        }
-        if ( l > 10000) {
-            l=0;
-            printf("success: %lu, read_err: %lu, write_err: %lu\n", success, read_err, write_err);
+    for(;;) {
+        for (uint8_t cmd=1; cmd < 8; cmd++) {
+            for (uint8_t ipin=0; ipin < 12; ipin++) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                uint8_t pin = pins[ipin];
+                printf("try write cmd: %u, pin: %2u (0x%02X)... ", cmd, pin, payload);
+
+                int num_bytes;
+                ssize_t written;
+
+                payload = pack(cmd,pin);
+
+                if ( (written=write(serial_port, &payload, 1)) != 1 ) {
+                    printf("Error %i from write: %s\n", errno, strerror(errno));
+                    write_err++;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                }
+                else if ( (num_bytes = read(serial_port, &response, sizeof(response))) != 1 ) {
+                    read_err++;
+                }
+                else {
+                    success++;
+                    printf("success: %lu, read_err: %lu, write_err: %lu\n", success, read_err, write_err);
+                }
+            }
         }
     }
 }

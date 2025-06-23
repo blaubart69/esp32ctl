@@ -8,18 +8,18 @@
 #include "esp_check.h"
 
 
-const uint8_t  host_digitalWriteZero = 1;
-const uint8_t  host_digitalWriteOne = 2;
-const uint8_t  host_digiRead = 3;
-const uint8_t  host_pinModeInput = 4;
-const uint8_t  host_pinModeInputPullup = 5;
-const uint8_t  host_pinModeInputPulldown = 6;
-const uint8_t  host_pinModeOutput = 7;
+const uint8_t  host_digitalWriteZero        = 1;
+const uint8_t  host_digitalWriteOne         = 2;
+const uint8_t  host_digiRead                = 3;
+const uint8_t  host_pinModeInput            = 4;
+const uint8_t  host_pinModeInputPullup      = 5;
+const uint8_t  host_pinModeInputPulldown    = 6;
+const uint8_t  host_pinModeOutput           = 7;
 
 
-const uint8_t client_digitalReadZero = 1;
-const uint8_t client_digitalReadOne = 2;
-const uint8_t client_error = 0xFF;
+const uint8_t client_digitalReadZero        = 1;
+const uint8_t client_digitalReadOne         = 2;
+const uint8_t client_error                  = 0xFF;
 
 struct host_cmd_t {
     uint8_t cmd;
@@ -118,10 +118,14 @@ static bool handle_command(const uint8_t rawcmd, uint8_t* response)
         case host_digitalWriteOne:        gpio_set_level(cmd.pin,1);                          break;
         case host_digitalWriteZero:       gpio_set_level(cmd.pin,0);                          break;
         case host_pinModeInput:           gpio_set_direction(cmd.pin, GPIO_MODE_INPUT);       break;
+        
         case host_pinModeInputPullup:     gpio_set_direction(cmd.pin, GPIO_MODE_INPUT);  
-                                          gpio_set_pull_mode(cmd.pin, GPIO_PULLUP_ENABLE);    break;
+                                          gpio_set_pull_mode(cmd.pin, GPIO_PULLUP_ENABLE);    
+                                          break;
+        
         case host_pinModeInputPulldown:   gpio_set_direction(cmd.pin, GPIO_MODE_INPUT);        
-                                          gpio_set_pull_mode(cmd.pin, GPIO_PULLDOWN_ENABLE);  break;
+                                          gpio_set_pull_mode(cmd.pin, GPIO_PULLDOWN_ENABLE);  
+                                          break;
         case host_pinModeOutput:          gpio_set_direction(cmd.pin, GPIO_MODE_OUTPUT);      break;
         case host_digiRead:   
             *response = handle_digitalRead(cmd.pin);
@@ -160,7 +164,6 @@ static void echo_task(void *arg)
     usb_serial_jtag_driver_config_t usb_serial_jtag_config = {
         .rx_buffer_size = BUF_SIZE,
         .tx_buffer_size = BUF_SIZE,
-        
     };
 
     ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_jtag_config));
