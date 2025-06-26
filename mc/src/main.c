@@ -43,21 +43,21 @@ static void vTaskBlinker(void* pvParameters )
         char message;
         if( xQueueReceive( blink_queue, &( message ), ( TickType_t ) pdMS_TO_TICKS(10000)) )  
         {
-            gpio_set_level(ESP32_SUPER_MINI_BUILDIN_LED,1);
+            gpio_set_level(ESP32_SUPER_MINI_BUILDIN_LED,0);
 
             TickType_t delay;
             if ( message == 'e' ) {
-                delay = pdMS_TO_TICKS(2000);
+                delay = 2000;
             } 
             else if ( message == 'o' ) {
-                delay = pdMS_TO_TICKS(50);
+                delay = 50;
             }
             else {
-                delay = pdMS_TO_TICKS(5000);
+                delay = 5000;
             }
-            vTaskDelay(delay);
+            vTaskDelay(pdMS_TO_TICKS(delay));
 
-            gpio_set_level(ESP32_SUPER_MINI_BUILDIN_LED,0);
+            gpio_set_level(ESP32_SUPER_MINI_BUILDIN_LED,1);
         }
     }
 }
