@@ -105,10 +105,24 @@ static uint8_t handle_digitalRead(const uint8_t pin)
 }
 
 //----------------------------------------------------------------------------
+static bool is_valid_pin_for_esp32_super_mini(const uint8_t pin)
+//----------------------------------------------------------------------------    
+{
+    return
+           pin <= 10
+        || pin == 20
+        || pin == 21 ; 
+}
+
+//----------------------------------------------------------------------------
 static bool handle_command(const uint8_t rawcmd, uint8_t* response)
 //----------------------------------------------------------------------------    
 {   
     struct host_cmd_t cmd = decode_command(rawcmd);
+
+    if ( ! is_valid_pin_for_esp32_super_mini(cmd.pin) ) {
+        return false;
+    }
 
     *response = rawcmd;
 
@@ -129,7 +143,7 @@ static bool handle_command(const uint8_t rawcmd, uint8_t* response)
         case host_pinModeOutput:          gpio_set_direction(cmd.pin, GPIO_MODE_OUTPUT);      break;
         case host_digiRead:               *response = handle_digitalRead(cmd.pin);            break;
     }
-    
+
     return true;
 }
 //----------------------------------------------------------------------------
