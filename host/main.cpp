@@ -114,6 +114,40 @@ void autofire(int serial_port) {
     }
 }
 
+void autofire_all(int serial_port) {
+    //const uint8_t payload = 0x60;
+    uint8_t payload = 0x00;
+    uint8_t response;
+    size_t read_err = 0;
+    size_t success = 0;
+    size_t write_err = 0;
+
+    uint8_t pins[] = {0,1,2,3,4,5,6,7,9,10,20,21};
+
+    for(;; payload++) {
+        //std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        printf("try write payload: 0x%02X... ", payload);
+
+        int num_bytes;
+        ssize_t written;
+
+        //payload = pack(cmd,pin);
+
+        if ( (written=write(serial_port, &payload, 1)) != 1 ) {
+            printf("Error %i from write: %s\n", errno, strerror(errno));
+            write_err++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        }
+        else if ( (num_bytes = read(serial_port, &response, sizeof(response))) != 1 ) {
+            read_err++;
+        }
+        else {
+            success++;
+            printf("success: %lu, read_err: %lu, write_err: %lu\n", success, read_err, write_err);
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
   // Open the serial port. Change device path as needed (currently set to an standard FTDI USB-UART cable type device)
   int serial_port = open("/dev/esp32mini", O_RDWR);
@@ -161,6 +195,9 @@ int main(int argc, char* argv[]) {
 
   if ( argc == 2 && strcmp("a", argv[1]) == 0 ) {
     autofire(serial_port);
+  }
+  else if ( argc == 2 && strcmp("all", argv[1]) == 0 ) {
+    autofire_all(serial_port);
   }
   else {
     msg_loop(serial_port);
