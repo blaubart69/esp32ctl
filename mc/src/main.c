@@ -115,22 +115,21 @@ static bool handle_command(const uint8_t rawcmd, uint8_t* response)
     switch (cmd.cmd)
     {
         default: return false;
+
         case host_digitalWriteOne:        gpio_set_level(cmd.pin,1);                          break;
         case host_digitalWriteZero:       gpio_set_level(cmd.pin,0);                          break;
         case host_pinModeInput:           gpio_set_direction(cmd.pin, GPIO_MODE_INPUT);       break;
         
         case host_pinModeInputPullup:     gpio_set_direction(cmd.pin, GPIO_MODE_INPUT);  
-                                          gpio_set_pull_mode(cmd.pin, GPIO_PULLUP_ENABLE);    
-                                          break;
+                                          gpio_set_pull_mode(cmd.pin, GPIO_PULLUP_ENABLE);    break;
         
         case host_pinModeInputPulldown:   gpio_set_direction(cmd.pin, GPIO_MODE_INPUT);        
-                                          gpio_set_pull_mode(cmd.pin, GPIO_PULLDOWN_ENABLE);  
-                                          break;
+                                          gpio_set_pull_mode(cmd.pin, GPIO_PULLDOWN_ENABLE);  break;
+
         case host_pinModeOutput:          gpio_set_direction(cmd.pin, GPIO_MODE_OUTPUT);      break;
-        case host_digiRead:   
-            *response = handle_digitalRead(cmd.pin);
-            break;
+        case host_digiRead:               *response = handle_digitalRead(cmd.pin);            break;
     }
+    
     return true;
 }
 //----------------------------------------------------------------------------
@@ -148,10 +147,9 @@ static void onCommand( const uint8_t buf[], const size_t len, uint8_t dataout[] 
         else {
             blink = 'o';
         }
-        /*
         if ( xQueueSend(blink_queue, (void*)&blink, 0) == errQUEUE_FULL ) {
             // we don't care
-        }*/
+        }
     }
 }
 
@@ -195,6 +193,6 @@ void app_main(void)
 {
     blink_queue = xQueueCreate(3, sizeof(char));
 
-    //xTaskCreate(vTaskBlinker, "Blinker", 4096, blink_queue, tskIDLE_PRIORITY, NULL);
+    xTaskCreate(vTaskBlinker, "Blinker", 4096, blink_queue, tskIDLE_PRIORITY, NULL);
     xTaskCreate(echo_task, "esp32Ctl Task", ECHO_TASK_STACK_SIZE, NULL, 10, NULL);
 }
