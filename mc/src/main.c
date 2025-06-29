@@ -167,10 +167,10 @@ static void onCommand( const uint8_t buf[], const size_t len, uint8_t dataout[] 
     }
 }
 
-#define BUF_SIZE (512)
+#define BUF_SIZE (128)
 #define ECHO_TASK_STACK_SIZE (4096)
 
-static void echo_task(void *arg)
+static void main_loop(void *arg)
 {
     // Configure USB SERIAL JTAG
     usb_serial_jtag_driver_config_t usb_serial_jtag_config = {
@@ -181,6 +181,7 @@ static void echo_task(void *arg)
     ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&usb_serial_jtag_config));
     ESP_LOGI("usb_serial_jtag echo", "USB_SERIAL_JTAG init done");
 
+    /*
     // Configure a temporary buffer for the incoming data
     uint8_t *data = (uint8_t *) malloc(BUF_SIZE);
     if (data == NULL) {
@@ -192,13 +193,15 @@ static void echo_task(void *arg)
     if (dataout == NULL) {
         ESP_LOGE("usb_serial_jtag echo", "no memory for dataout");
         return;
-    }
+    }*/
+    static uint8_t data_in [BUF_SIZE];
+    static uint8_t data_out[BUF_SIZE];
 
     while (1) {
-        const int len = usb_serial_jtag_read_bytes(data, (BUF_SIZE - 1), 2000 / portTICK_PERIOD_MS);
+        const int len = usb_serial_jtag_read_bytes(data_in, BUF_SIZE, 2000 / portTICK_PERIOD_MS);
         if (len) {
-            onCommand(data, len, dataout);
-            usb_serial_jtag_write_bytes(dataout, len, 20 / portTICK_PERIOD_MS);
+            onCommand(data_in, len, data_out);
+            usb_serial_jtag_write_bytes(data_out, len, 20 / portTICK_PERIOD_MS);
         }
     }
 }
@@ -208,5 +211,5 @@ void app_main(void)
     blink_queue = xQueueCreate(3, sizeof(char));
 
     xTaskCreate(vTaskBlinker, "Blinker", 4096, blink_queue, tskIDLE_PRIORITY, NULL);
-    xTaskCreate(echo_task, "esp32Ctl Task", ECHO_TASK_STACK_SIZE, NULL, 10, NULL);
+    xTaskCreate(main_loop, "esp32Ctl", ECHO_TASK_STACK_SIZE, NULL, 10, NULL);
 }
